@@ -82,13 +82,6 @@ function formatNumber(num) {
   return new Intl.NumberFormat('cs-CZ').format(num);
 }
 
-// Decorative arrow icon
-const ArrowIcon = ({ className = '' }) => (
-  <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 // Komfi Logo
 const KomfiLogo = ({ className = '' }) => (
   <svg className={className} viewBox="0 0 569.75 170.24" fill="currentColor">
@@ -113,6 +106,42 @@ const ChevronIcon = ({ isOpen, className = '' }) => (
   </svg>
 );
 
+// Sun icon for light mode
+const SunIcon = ({ className = '' }) => (
+  <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+
+// Moon icon for dark mode
+const MoonIcon = ({ className = '' }) => (
+  <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+// Theme toggle component
+const ThemeToggle = ({ isDark, onToggle }) => (
+  <button
+    onClick={onToggle}
+    className="p-2.5 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-terracotta)] transition-all duration-300"
+    aria-label={isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'}
+  >
+    <div className="relative w-5 h-5">
+      <SunIcon className={`absolute inset-0 text-[var(--color-terracotta)] transition-all duration-300 ${isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`} />
+      <MoonIcon className={`absolute inset-0 text-[var(--color-terracotta)] transition-all duration-300 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`} />
+    </div>
+  </button>
+);
+
 function Calculator() {
   const [scenario, setScenario] = useState('realistic');
   const [showPartnerTypes, setShowPartnerTypes] = useState(false);
@@ -120,14 +149,53 @@ function Calculator() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+
+    // Check auth
     const authenticated = sessionStorage.getItem('komfi-auth');
     if (authenticated === 'true') {
       setIsAuthenticated(true);
     }
+
+    // Check theme preference
+    const savedTheme = localStorage.getItem('komfi-theme');
+    if (savedTheme) {
+      setIsDark(savedTheme === 'dark');
+    } else {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDark(prefersDark);
+    }
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => {
+      const savedTheme = localStorage.getItem('komfi-theme');
+      if (!savedTheme) {
+        setIsDark(e.matches);
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
+
+  // Apply theme to document
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    localStorage.setItem('komfi-theme', newTheme ? 'dark' : 'light');
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -220,24 +288,27 @@ function Calculator() {
   // Login screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#f7f5f0] grain-overlay flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[var(--color-bg)] grain-overlay flex items-center justify-center px-4">
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+        </div>
         <div className="w-full max-w-md">
-          <div className={`bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-[#e8e5de] ${mounted ? 'animate-scale-in' : 'opacity-0'}`}>
+          <div className={`bg-[var(--color-bg-card)] rounded-2xl p-8 md:p-10 shadow-sm border border-[var(--color-border)] ${mounted ? 'animate-scale-in' : 'opacity-0'}`}>
             <div className="text-center mb-8">
               <div className="flex justify-center mb-6">
-                <KomfiLogo className="h-6 text-[#2d2d2d]" />
+                <KomfiLogo className="h-6 text-[var(--color-text-primary)]" />
               </div>
-              <h1 className="font-display text-2xl md:text-3xl text-[#2d2d2d] mb-2">
+              <h1 className="font-display text-2xl md:text-3xl text-[var(--color-text-primary)] mb-2">
                 Odměny obchodních zástupců
               </h1>
-              <p className="text-[#8a8279] text-sm">
+              <p className="text-[var(--color-text-muted)] text-sm">
                 Interní kalkulátor pro tým Komfi
               </p>
             </div>
 
             <form onSubmit={handleLogin}>
               <div className="mb-4">
-                <label htmlFor="password" className="block text-[#4a4a4a] text-sm font-medium mb-2">
+                <label htmlFor="password" className="block text-[var(--color-text-secondary)] text-sm font-medium mb-2">
                   Heslo
                 </label>
                 <input
@@ -245,14 +316,14 @@ function Calculator() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8e5de] bg-[#f7f5f0] text-[#2d2d2d] placeholder-[#a69f94] focus:outline-none focus:border-[#c67c4e] focus:ring-2 focus:ring-[#c67c4e]/20 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-terracotta)] focus:ring-2 focus:ring-[var(--color-terracotta)]/20 transition-all"
                   placeholder="Zadejte heslo"
                   autoFocus
                 />
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm text-center">
+                <div className="mb-4 p-3 bg-[var(--color-error-bg)] border border-[var(--color-error-border)] rounded-xl text-[var(--color-error-text)] text-sm text-center">
                   {error}
                 </div>
               )}
@@ -265,16 +336,16 @@ function Calculator() {
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-[#e8e5de] text-center">
-              <p className="text-[#a69f94] text-xs">
+            <div className="mt-6 pt-6 border-t border-[var(--color-border)] text-center">
+              <p className="text-[var(--color-text-subtle)] text-xs">
                 Přístup pouze pro autorizované uživatele
               </p>
             </div>
           </div>
 
           <div className="text-center mt-6">
-            <div className="flex items-center justify-center gap-2 text-[#a69f94]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#c67c4e]"></span>
+            <div className="flex items-center justify-center gap-2 text-[var(--color-text-subtle)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-terracotta)]"></span>
               <span className="font-display text-sm">Komfi Health s.r.o.</span>
             </div>
           </div>
@@ -284,27 +355,32 @@ function Calculator() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f5f0] grain-overlay">
+    <div className="min-h-screen bg-[var(--color-bg)] grain-overlay">
+      {/* Theme toggle - fixed top right */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+      </div>
+
       <div className="max-w-[1140px] mx-auto px-4 py-8 md:px-8 md:py-16">
 
         {/* Header */}
         <header className={`text-center mb-12 md:mb-16 ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}>
-          <div className="flex justify-center mb-8">
-            <KomfiLogo className="h-6 text-[#2d2d2d]" />
+          <div className="flex justify-center items-center mb-8">
+            <KomfiLogo className="h-6 text-[var(--color-text-primary)]" />
           </div>
-          <h1 className="font-display text-4xl md:text-[48px] lg:text-[48px] text-[#2d2d2d] mb-4 tracking-tight">
+          <h1 className="font-display text-4xl md:text-[48px] lg:text-[48px] text-[var(--color-text-primary)] mb-4 tracking-tight">
             Odměny obchodních zástupců
           </h1>
-          <p className="text-[#8a8279] text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+          <p className="text-[var(--color-text-muted)] text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
             Interaktivní simulace výdělku
           </p>
         </header>
 
         {/* How it works section */}
-        <section className={`bg-white rounded-2xl p-6 md:p-10 mb-8 shadow-sm border border-[#e8e5de] ${mounted ? 'animate-fade-in-up stagger-1' : 'opacity-0'}`}>
+        <section className={`bg-[var(--color-bg-card)] rounded-2xl p-6 md:p-10 mb-8 shadow-sm border border-[var(--color-border)] ${mounted ? 'animate-fade-in-up stagger-1' : 'opacity-0'}`}>
           <div className="flex items-center gap-4 mb-8">
             <div className="decorative-line"></div>
-            <h2 className="font-display text-2xl md:text-3xl text-[#2d2d2d]">Jak funguje odměňování</h2>
+            <h2 className="font-display text-2xl md:text-3xl text-[var(--color-text-primary)]">Jak funguje odměňování</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-8">
@@ -327,47 +403,47 @@ function Calculator() {
             ].map((item, index) => (
               <div key={index} className="group">
                 <div className="flex items-baseline gap-3 mb-3">
-                  <span className="font-display text-3xl md:text-4xl text-[#c67c4e] number-highlight">
+                  <span className="font-display text-3xl md:text-4xl text-[var(--color-terracotta)] number-highlight">
                     {item.value}
                   </span>
                 </div>
-                <h3 className="font-display text-lg text-[#2d2d2d] mb-2">{item.title}</h3>
-                <p className="text-[#8a8279] text-sm leading-relaxed">{item.description}</p>
+                <h3 className="font-display text-lg text-[var(--color-text-primary)] mb-2">{item.title}</h3>
+                <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Partner Types - Collapsible */}
-        <section className={`bg-white rounded-2xl mb-6 shadow-sm border border-[#e8e5de] overflow-hidden ${mounted ? 'animate-fade-in-up stagger-3' : 'opacity-0'}`}>
+        <section className={`bg-[var(--color-bg-card)] rounded-2xl mb-6 shadow-sm border border-[var(--color-border)] overflow-hidden ${mounted ? 'animate-fade-in-up stagger-3' : 'opacity-0'}`}>
           <button
             onClick={() => setShowPartnerTypes(!showPartnerTypes)}
-            className="w-full p-5 md:p-6 flex items-center justify-between text-left hover:bg-[#fdfcfa] transition-colors"
+            className="w-full p-5 md:p-6 flex items-center justify-between text-left hover:bg-[var(--color-bg-card-hover)] transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#f7f5f0] flex items-center justify-center">
-                <span className="text-[#c67c4e] text-sm">?</span>
+              <div className="w-8 h-8 rounded-full bg-[var(--color-bg-tag)] flex items-center justify-center">
+                <span className="text-[var(--color-terracotta)] text-sm">?</span>
               </div>
-              <h2 className="font-display text-xl text-[#2d2d2d]">Typy partnerů (obcí)</h2>
+              <h2 className="font-display text-xl text-[var(--color-text-primary)]">Typy partnerů (obcí)</h2>
             </div>
-            <ChevronIcon isOpen={showPartnerTypes} className="text-[#a69f94]" />
+            <ChevronIcon isOpen={showPartnerTypes} className="text-[var(--color-text-subtle)]" />
           </button>
 
           <div className={`grid transition-all duration-300 ease-in-out ${showPartnerTypes ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
             <div className="overflow-hidden">
               <div className="px-5 pb-6 md:px-6">
-                <p className="text-[#8a8279] text-sm mb-4">
+                <p className="text-[var(--color-text-muted)] text-sm mb-4">
                   Senior = osoba 65+. Ve skutečnosti nám ale nezáleží na věku klienta — důležité je, aby šel identifikovat jako součást obchodu skrze danou obec.
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {PARTNER_TYPES.map((p, i) => (
                     <div
                       key={i}
-                      className="p-4 bg-[#f7f5f0] rounded-xl border border-[#e8e5de] hover:border-[#c67c4e]/30 transition-colors"
+                      className="p-4 bg-[var(--color-bg-tag)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-terracotta)]/30 transition-colors"
                     >
-                      <div className="font-display text-[#2d2d2d] mb-1">{p.name}</div>
-                      <div className="text-xs text-[#a69f94] mb-2">{p.population}</div>
-                      <div className="text-sm font-semibold text-[#c67c4e]">{p.clients}</div>
+                      <div className="font-display text-[var(--color-text-primary)] mb-1">{p.name}</div>
+                      <div className="text-xs text-[var(--color-text-subtle)] mb-2">{p.population}</div>
+                      <div className="text-sm font-semibold text-[var(--color-terracotta)]">{p.clients}</div>
                     </div>
                   ))}
                 </div>
@@ -377,33 +453,33 @@ function Calculator() {
         </section>
 
         {/* Commission Tiers Table */}
-        <section className={`bg-white rounded-2xl p-5 md:p-8 mb-6 shadow-sm border border-[#e8e5de] ${mounted ? 'animate-fade-in-up stagger-4' : 'opacity-0'}`}>
+        <section className={`bg-[var(--color-bg-card)] rounded-2xl p-5 md:p-8 mb-6 shadow-sm border border-[var(--color-border)] ${mounted ? 'animate-fade-in-up stagger-4' : 'opacity-0'}`}>
           <div className="flex items-center gap-4 mb-6">
             <div className="decorative-line"></div>
-            <h2 className="font-display text-xl md:text-2xl text-[#2d2d2d]">Provizní tabulka</h2>
+            <h2 className="font-display text-xl md:text-2xl text-[var(--color-text-primary)]">Provizní tabulka</h2>
           </div>
 
           <div className="overflow-x-auto -mx-5 md:-mx-8 px-5 md:px-8">
-            <table className="w-full min-w-[500px]">
+            <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-[#e8e5de]">
-                  <th className="pb-4 text-left text-[#a69f94] text-xs uppercase tracking-wider font-medium">Počet klientů</th>
-                  <th className="pb-4 text-center text-[#a69f94] text-xs uppercase tracking-wider font-medium">1. měsíc</th>
-                  <th className="pb-4 text-center text-[#a69f94] text-xs uppercase tracking-wider font-medium">2.–6. měsíc</th>
-                  <th className="pb-4 text-right text-[#a69f94] text-xs uppercase tracking-wider font-medium">Provize per klient</th>
+                <tr className="border-b-2 border-[var(--color-border)]">
+                  <th className="pb-4 text-left text-[var(--color-text-subtle)] text-xs uppercase tracking-wider font-medium">Klientů</th>
+                  <th className="pb-4 text-center text-[var(--color-text-subtle)] text-xs uppercase tracking-wider font-medium">1. měs.</th>
+                  <th className="pb-4 text-center text-[var(--color-text-subtle)] text-xs uppercase tracking-wider font-medium">2.–6. měs.</th>
+                  <th className="pb-4 text-right text-[var(--color-text-subtle)] text-xs uppercase tracking-wider font-medium whitespace-nowrap">Prov./klient</th>
                 </tr>
               </thead>
               <tbody>
                 {TIERS.map((t, i) => (
-                  <tr key={i} className="table-row-hover border-b border-[#f7f5f0] last:border-0">
-                    <td className="py-4 font-medium text-[#2d2d2d]">{t.label}</td>
+                  <tr key={i} className="table-row-hover border-b border-[var(--color-border-light)] last:border-0">
+                    <td className="py-4 font-medium text-[var(--color-text-primary)]">{t.label}</td>
                     <td className="py-4 text-center">
-                      <span className="inline-flex items-center justify-center px-3 py-1 bg-[#c67c4e]/10 text-[#c67c4e] font-semibold rounded-full text-sm">
+                      <span className="inline-flex items-center justify-center px-3 py-1 bg-[var(--color-terracotta-bg)] text-[var(--color-terracotta)] font-semibold rounded-full text-sm">
                         {t.percent} %
                       </span>
                     </td>
-                    <td className="py-4 text-center text-[#8a8279]">5 %</td>
-                    <td className="py-4 text-right text-[#2d2d2d] font-medium">
+                    <td className="py-4 text-center text-[var(--color-text-muted)]">5 %</td>
+                    <td className="py-4 text-right text-[var(--color-text-primary)] font-medium">
                       {formatCurrency(AVG_ORDER * (t.percent / 100) + 5 * AVG_ORDER * RETENTION * PORTFOLIO_COMMISSION)}
                     </td>
                   </tr>
@@ -416,21 +492,21 @@ function Calculator() {
         {/* Simulation Section Header */}
         <div className={`flex items-center gap-4 mb-6 ${mounted ? 'animate-fade-in-up stagger-5' : 'opacity-0'}`}>
           <div className="decorative-line"></div>
-          <h2 className="font-display text-2xl md:text-3xl text-[#2d2d2d]">Simulace obchodních scénářů</h2>
+          <h2 className="font-display text-2xl md:text-3xl text-[var(--color-text-primary)]">Simulace obchodních scénářů</h2>
         </div>
 
         {/* Scenario Tabs - Sticky */}
-        <div className="sticky top-0 z-20 py-4 -mx-4 px-4 md:-mx-8 md:px-8 bg-[#f7f5f0]/95 backdrop-blur-sm mb-6">
-          <div className="bg-white rounded-xl p-1.5 shadow-sm border border-[#e8e5de] max-w-2xl mx-auto">
-            <div className="grid grid-cols-3 gap-1">
+        <div className="sticky top-0 z-20 py-3 md:py-4 -mx-4 px-4 md:-mx-8 md:px-8 bg-[var(--color-bg-sticky)] backdrop-blur-sm mb-6">
+          <div className="bg-[var(--color-bg-card)] rounded-xl p-1 md:p-1.5 shadow-sm border border-[var(--color-border)] max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 gap-0.5 md:gap-1">
               {Object.entries(SCENARIOS).map(([key, s]) => (
                 <button
                   key={key}
                   onClick={() => setScenario(key)}
-                  className={`relative px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  className={`relative px-2 md:px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 ${
                     scenario === key
-                      ? 'bg-[#2d2d2d] text-white shadow-md'
-                      : 'text-[#8a8279] hover:text-[#2d2d2d] hover:bg-[#f7f5f0]'
+                      ? 'bg-[var(--color-text-primary)] text-[var(--color-bg)] shadow-md'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tag)]'
                   }`}
                 >
                   <span className="relative z-10">{s.name}</span>
@@ -441,24 +517,24 @@ function Calculator() {
         </div>
 
         {/* Active Months Table */}
-        <section className={`bg-white rounded-2xl p-5 md:p-8 mb-6 shadow-sm border border-[#e8e5de] ${mounted ? 'animate-fade-in-up stagger-5' : 'opacity-0'}`}>
+        <section className={`bg-[var(--color-bg-card)] rounded-2xl p-5 md:p-8 mb-6 shadow-sm border border-[var(--color-border)] ${mounted ? 'animate-fade-in-up stagger-5' : 'opacity-0'}`}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-6">
             <div>
-              <h2 className="font-display text-xl md:text-2xl text-[#2d2d2d]">
+              <h2 className="font-display text-xl md:text-2xl text-[var(--color-text-primary)]">
                 Měsíce 1–6
-                <span className="text-[#c67c4e] ml-2">Aktivní akvizice</span>
+                <span className="text-[var(--color-terracotta)] ml-2">Aktivní akvizice</span>
               </h2>
-              <p className="text-[#a69f94] text-sm mt-1">
+              <p className="text-[var(--color-text-subtle)] text-sm mt-1">
                 Fixní odměna {formatCurrency(FIXED_SALARY)}/měsíc + provize
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className="w-3 h-3 rounded-full bg-[#c67c4e]"></span>
-              <span className="text-[#8a8279]">Scénář: {SCENARIOS[scenario].name}</span>
+              <span className="w-3 h-3 rounded-full bg-[var(--color-terracotta)]"></span>
+              <span className="text-[var(--color-text-muted)]">Scénář: {SCENARIOS[scenario].name}</span>
             </div>
           </div>
 
-          <div className="mb-6 p-4 bg-[#f7f5f0] rounded-xl text-sm grid grid-cols-2 md:grid-cols-3 gap-3 border border-[#e8e5de]">
+          <div className="mb-6 p-4 bg-[var(--color-bg-tag)] rounded-xl text-sm grid grid-cols-2 md:grid-cols-3 gap-3 border border-[var(--color-border)]">
             {[
               { label: 'Noví klienti', desc: 'počet nově získaných' },
               { label: 'Úroveň', desc: 'pásmo dle počtu nových' },
@@ -467,57 +543,57 @@ function Calculator() {
               { label: 'Provize portf.', desc: 'portfolio × 2 000 Kč × 5%' },
               { label: 'Partner', desc: 'orientační typ partnera' },
             ].map((item, i) => (
-              <div key={i} className="text-[#8a8279]">
-                <span className="font-medium text-[#4a4a4a]">{item.label}:</span> {item.desc}
+              <div key={i} className="text-[var(--color-text-muted)]">
+                <span className="font-medium text-[var(--color-text-secondary)]">{item.label}:</span> {item.desc}
               </div>
             ))}
           </div>
 
           <div className="overflow-x-auto -mx-5 md:-mx-8 px-5 md:px-8">
-            <table className="w-full min-w-[700px]">
+            <table className="w-full min-w-[640px]">
               <thead>
-                <tr className="border-b-2 border-[#e8e5de]">
-                  <th className="pb-3 text-left text-[#a69f94] text-xs uppercase tracking-wider font-medium">Měsíc</th>
-                  <th className="pb-3 text-left text-[#a69f94] text-xs uppercase tracking-wider font-medium">Partner</th>
-                  <th className="pb-3 text-center text-[#a69f94] text-xs uppercase tracking-wider font-medium">Noví</th>
-                  <th className="pb-3 text-center text-[#a69f94] text-xs uppercase tracking-wider font-medium">Úroveň</th>
-                  <th className="pb-3 text-right text-[#a69f94] text-xs uppercase tracking-wider font-medium">Provize</th>
-                  <th className="pb-3 text-center text-[#a69f94] text-xs uppercase tracking-wider font-medium pr-2">Portf.</th>
-                  <th className="pb-3 text-right text-[#a69f94] text-xs uppercase tracking-wider font-medium pl-2">Portf. prov.</th>
-                  <th className="pb-3 text-right text-[#a69f94] text-xs uppercase tracking-wider font-medium">Fixní</th>
-                  <th className="pb-3 text-right text-[#a69f94] text-xs uppercase tracking-wider font-medium font-semibold">Celkem</th>
+                <tr className="border-b-2 border-[var(--color-border)]">
+                  <th className="pb-3 text-left text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">Měsíc</th>
+                  <th className="pb-3 text-left text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium">Partner</th>
+                  <th className="pb-3 text-center text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">Noví</th>
+                  <th className="pb-3 text-center text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">Úroveň</th>
+                  <th className="pb-3 text-right text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">Provize</th>
+                  <th className="pb-3 text-center text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">Portf.</th>
+                  <th className="pb-3 text-right text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">P. prov.</th>
+                  <th className="pb-3 text-right text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium whitespace-nowrap">Fixní</th>
+                  <th className="pb-3 text-right text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium font-semibold whitespace-nowrap">Celkem</th>
                 </tr>
               </thead>
               <tbody>
                 {calculations.months.slice(0, 6).map((m, index) => (
                   <tr
                     key={m.month}
-                    className="table-row-hover border-b border-[#f7f5f0]"
+                    className="table-row-hover border-b border-[var(--color-border-light)]"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <td className="py-3.5 font-display text-lg text-[#2d2d2d]">M{m.month}</td>
-                    <td className="py-3.5 text-xs text-[#a69f94]">{m.partner}</td>
-                    <td className="py-3.5 text-center">
-                      <span className="font-semibold text-[#c67c4e]">{m.newClients}</span>
+                    <td className="py-3 md:py-3.5 font-display text-base md:text-lg text-[var(--color-text-primary)]">M{m.month}</td>
+                    <td className="py-3 md:py-3.5 text-[10px] md:text-xs text-[var(--color-text-subtle)] whitespace-nowrap">{m.partner}</td>
+                    <td className="py-3 md:py-3.5 text-center">
+                      <span className="font-semibold text-[var(--color-terracotta)] text-sm md:text-base">{m.newClients}</span>
                     </td>
-                    <td className="py-3.5 text-center">
-                      <span className="inline-flex px-2 py-0.5 bg-[#f7f5f0] rounded text-xs text-[#4a4a4a]">
-                        {m.tier} <span className="text-[#a69f94] ml-1">({m.tierPercent}%)</span>
+                    <td className="py-3 md:py-3.5 text-center">
+                      <span className="inline-flex px-1.5 md:px-2 py-0.5 bg-[var(--color-bg-tag)] rounded text-[10px] md:text-xs text-[var(--color-text-secondary)] whitespace-nowrap">
+                        {m.tier} <span className="text-[var(--color-text-subtle)] ml-1">({m.tierPercent}%)</span>
                       </span>
                     </td>
-                    <td className="py-3.5 text-right text-[#2d2d2d]">{formatCurrency(m.newCommission)}</td>
-                    <td className="py-3.5 text-center text-[#a69f94] pr-2">{m.portfolio}</td>
-                    <td className="py-3.5 text-right text-[#8a8279] pl-2">{formatCurrency(m.portfolioCommission)}</td>
-                    <td className="py-3.5 text-right text-[#a69f94]">{formatCurrency(m.fixed)}</td>
-                    <td className="py-3.5 text-right font-semibold text-[#2d2d2d]">{formatCurrency(m.total)}</td>
+                    <td className="py-3 md:py-3.5 text-right text-[var(--color-text-primary)] text-sm md:text-base whitespace-nowrap">{formatCurrency(m.newCommission)}</td>
+                    <td className="py-3 md:py-3.5 text-center text-[var(--color-text-subtle)] text-sm md:text-base">{m.portfolio}</td>
+                    <td className="py-3 md:py-3.5 text-right text-[var(--color-text-muted)] text-sm md:text-base whitespace-nowrap">{formatCurrency(m.portfolioCommission)}</td>
+                    <td className="py-3 md:py-3.5 text-right text-[var(--color-text-subtle)] text-sm md:text-base whitespace-nowrap">{formatCurrency(m.fixed)}</td>
+                    <td className="py-3 md:py-3.5 text-right font-semibold text-[var(--color-text-primary)] text-sm md:text-base whitespace-nowrap">{formatCurrency(m.total)}</td>
                   </tr>
                 ))}
-                <tr className="bg-gradient-to-r from-[#f7f5f0] to-[#ebe8e1]">
-                  <td className="py-4 rounded-l-lg font-display text-lg text-[#2d2d2d]" colSpan={8}>
+                <tr className="bg-gradient-to-r from-[var(--color-gradient-from)] to-[var(--color-gradient-to)]">
+                  <td className="py-3 md:py-4 rounded-l-lg font-display text-base md:text-lg text-[var(--color-text-primary)]" colSpan={8}>
                     Celkem M1–6
                   </td>
-                  <td className="py-4 rounded-r-lg text-right">
-                    <span className="font-display text-xl text-[#c67c4e]">{formatCurrency(calculations.activeTotal)}</span>
+                  <td className="py-3 md:py-4 rounded-r-lg text-right whitespace-nowrap">
+                    <span className="font-display text-lg md:text-xl text-[var(--color-terracotta)]">{formatCurrency(calculations.activeTotal)}</span>
                   </td>
                 </tr>
               </tbody>
@@ -526,36 +602,36 @@ function Calculator() {
         </section>
 
         {/* Passive Months Table */}
-        <section className={`bg-white rounded-2xl p-5 md:p-8 mb-8 shadow-sm border border-[#e8e5de] ${mounted ? 'animate-fade-in-up stagger-6' : 'opacity-0'}`}>
+        <section className={`bg-[var(--color-bg-card)] rounded-2xl p-5 md:p-8 mb-8 shadow-sm border border-[var(--color-border)] ${mounted ? 'animate-fade-in-up stagger-6' : 'opacity-0'}`}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-6">
             <div>
-              <h2 className="font-display text-xl md:text-2xl text-[#2d2d2d]">
+              <h2 className="font-display text-xl md:text-2xl text-[var(--color-text-primary)]">
                 Měsíce 7–12
-                <span className="text-[#8a8279] ml-2">Dobíhající provize</span>
+                <span className="text-[var(--color-text-muted)] ml-2">Dobíhající provize</span>
               </h2>
-              <p className="text-[#a69f94] text-sm mt-1">
+              <p className="text-[var(--color-text-subtle)] text-sm mt-1">
                 Pohled na dobíhající pasivní příjem z práce provedené v prvních 6 měsících
               </p>
             </div>
           </div>
 
           <div className="overflow-x-auto -mx-5 md:-mx-8 px-5 md:px-8">
-            <table className="w-full min-w-[400px]">
+            <table className="w-full min-w-[360px]">
               <thead>
-                <tr className="border-b-2 border-[#e8e5de]">
-                  <th className="pb-3 text-left text-[#a69f94] text-xs uppercase tracking-wider font-medium">Měsíc</th>
-                  <th className="pb-3 text-center text-[#a69f94] text-xs uppercase tracking-wider font-medium">Portfolio</th>
-                  <th className="pb-3 text-right text-[#a69f94] text-xs uppercase tracking-wider font-medium">Provize</th>
-                  <th className="pb-3 text-left text-[#a69f94] text-xs uppercase tracking-wider font-medium pl-6">Poznámka</th>
+                <tr className="border-b-2 border-[var(--color-border)]">
+                  <th className="pb-3 text-left text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium">Měsíc</th>
+                  <th className="pb-3 text-center text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium">Portfolio</th>
+                  <th className="pb-3 text-right text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium">Provize</th>
+                  <th className="pb-3 text-left text-[var(--color-text-subtle)] text-[10px] md:text-xs uppercase tracking-wider font-medium pl-4 md:pl-6">Poznámka</th>
                 </tr>
               </thead>
               <tbody>
                 {calculations.months.slice(6).map((m) => (
-                  <tr key={m.month} className="table-row-hover border-b border-[#f7f5f0]">
-                    <td className="py-3.5 font-display text-lg text-[#2d2d2d]">M{m.month}</td>
-                    <td className="py-3.5 text-center text-[#a69f94]">{m.portfolio}</td>
-                    <td className="py-3.5 text-right font-medium text-[#2d2d2d]">{formatCurrency(m.portfolioCommission)}</td>
-                    <td className="py-3.5 text-sm text-[#a69f94] pl-6">
+                  <tr key={m.month} className="table-row-hover border-b border-[var(--color-border-light)]">
+                    <td className="py-3 md:py-3.5 font-display text-base md:text-lg text-[var(--color-text-primary)]">M{m.month}</td>
+                    <td className="py-3 md:py-3.5 text-center text-[var(--color-text-subtle)] text-sm md:text-base">{m.portfolio}</td>
+                    <td className="py-3 md:py-3.5 text-right font-medium text-[var(--color-text-primary)] text-sm md:text-base whitespace-nowrap">{formatCurrency(m.portfolioCommission)}</td>
+                    <td className="py-3 md:py-3.5 text-[10px] md:text-sm text-[var(--color-text-subtle)] pl-4 md:pl-6 whitespace-nowrap">
                       {m.portfolio > 0
                         ? `Kohorty M${Math.max(1, m.month - 5)}–M6`
                         : 'Všichni mimo okno'
@@ -563,12 +639,12 @@ function Calculator() {
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-gradient-to-r from-[#f7f5f0] to-[#ebe8e1]">
-                  <td className="py-4 rounded-l-lg font-display text-lg text-[#2d2d2d]" colSpan={2}>
+                <tr className="bg-gradient-to-r from-[var(--color-gradient-from)] to-[var(--color-gradient-to)]">
+                  <td className="py-3 md:py-4 rounded-l-lg font-display text-base md:text-lg text-[var(--color-text-primary)]" colSpan={2}>
                     Celkem M7–12
                   </td>
-                  <td className="py-4 text-right">
-                    <span className="font-display text-xl text-[#c67c4e]">{formatCurrency(calculations.passiveTotal)}</span>
+                  <td className="py-3 md:py-4 text-right whitespace-nowrap">
+                    <span className="font-display text-lg md:text-xl text-[var(--color-terracotta)]">{formatCurrency(calculations.passiveTotal)}</span>
                   </td>
                   <td className="rounded-r-lg"></td>
                 </tr>
@@ -579,13 +655,13 @@ function Calculator() {
 
         {/* Summary Cards */}
         <section className={`mb-12 ${mounted ? 'animate-scale-in' : 'opacity-0'}`} style={{ animationDelay: '0.4s' }}>
-          <div className="bg-[#2d2d2d] rounded-2xl p-6 md:p-10 text-white overflow-hidden relative summary-glow">
+          <div className="bg-[var(--color-summary-bg)] rounded-2xl p-6 md:p-10 text-[var(--color-summary-text)] overflow-hidden relative summary-glow">
             {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#c67c4e]/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[var(--color-terracotta)]/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
             <div className="relative">
               <div className="flex items-center gap-3 mb-8">
-                <div className="decorative-line !bg-gradient-to-r !from-[#c67c4e] !to-[#d4956b]"></div>
+                <div className="decorative-line !bg-gradient-to-r !from-[var(--color-terracotta)] !to-[var(--color-terracotta-light)]"></div>
                 <h2 className="font-display text-2xl md:text-3xl">
                   Souhrn — {SCENARIOS[scenario].name} scénář
                 </h2>
@@ -593,35 +669,35 @@ function Calculator() {
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 mb-8">
                 <div className="group">
-                  <div className="text-[#a69f94] text-sm mb-2">Získaných klientů</div>
-                  <div className="font-display text-2xl md:text-3xl lg:text-4xl number-highlight text-[#c67c4e]">
+                  <div className="text-[var(--color-text-subtle)] text-sm mb-2">Získaných klientů</div>
+                  <div className="font-display text-2xl md:text-3xl lg:text-4xl number-highlight text-[var(--color-terracotta)]">
                     {formatNumber(calculations.totalClients)}
                   </div>
                 </div>
                 <div className="group">
-                  <div className="text-[#a69f94] text-sm mb-2">Výdělek M1–6</div>
-                  <div className="font-display text-2xl md:text-3xl lg:text-4xl number-highlight text-[#c67c4e]">
+                  <div className="text-[var(--color-text-subtle)] text-sm mb-2">Výdělek M1–6</div>
+                  <div className="font-display text-2xl md:text-3xl lg:text-4xl number-highlight text-[var(--color-terracotta)]">
                     {formatCurrency(calculations.activeTotal)}
                   </div>
                 </div>
                 <div className="group">
-                  <div className="text-[#a69f94] text-sm mb-2">Průměr/měsíc</div>
-                  <div className="font-display text-2xl md:text-3xl lg:text-4xl number-highlight text-white">
+                  <div className="text-[var(--color-text-subtle)] text-sm mb-2">Průměr/měsíc</div>
+                  <div className="font-display text-2xl md:text-3xl lg:text-4xl number-highlight text-[var(--color-summary-text)]">
                     {formatCurrency((calculations.activeTotal + calculations.passiveTotal) / 6)}
                   </div>
-                  <div className="text-[#a69f94] text-xs mt-2">
+                  <div className="text-[var(--color-text-subtle)] text-xs mt-2">
                     {formatCurrency(calculations.activeTotal / 6)} + {formatCurrency(calculations.passiveTotal / 6)} dobíhající (celkem {formatCurrency(calculations.passiveTotal)} za 6 měsíců)
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row md:items-center justify-between pt-6 border-t border-white/10 gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between pt-6 border-t border-[var(--color-summary-border)] gap-4">
                 <div>
-                  <span className="text-[#a69f94]">Celkový výdělek za práci za 6 měsíců: </span>
-                  <span className="font-display text-2xl text-white ml-2">{formatCurrency(calculations.grandTotal)}</span>
+                  <span className="text-[var(--color-text-subtle)]">Celkový výdělek za práci za 6 měsíců: </span>
+                  <span className="font-display text-2xl text-[var(--color-summary-text)] ml-2">{formatCurrency(calculations.grandTotal)}</span>
                 </div>
-                <div className="text-[#a69f94] text-sm">
-                  CPA: <span className="text-white font-medium">{formatCurrency(calculations.avgCPA)}</span>
+                <div className="text-[var(--color-text-subtle)] text-sm">
+                  CPA: <span className="text-[var(--color-summary-text)] font-medium">{formatCurrency(calculations.avgCPA)}</span>
                 </div>
               </div>
             </div>
@@ -630,13 +706,13 @@ function Calculator() {
 
         {/* Footer */}
         <footer className="text-center pb-8">
-          <p className="text-[#a69f94] text-sm mb-3">
+          <p className="text-[var(--color-text-subtle)] text-sm mb-3">
             Předpoklady: průměrná objednávka {formatCurrency(AVG_ORDER)}/měsíc, retence {RETENTION * 100}%
           </p>
-          <div className="flex items-center justify-center gap-2 text-[#8a8279]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c67c4e]"></span>
+          <div className="flex items-center justify-center gap-2 text-[var(--color-text-muted)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-terracotta)]"></span>
             <span className="font-display text-lg">Komfi Health s.r.o.</span>
-            <span className="text-[#a69f94]">•</span>
+            <span className="text-[var(--color-text-subtle)]">•</span>
             <span className="text-sm">{new Date().getFullYear()}</span>
           </div>
         </footer>
