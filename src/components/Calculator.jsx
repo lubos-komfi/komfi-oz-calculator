@@ -205,7 +205,7 @@ function Calculator() {
           <div className="flex justify-center mb-8">
             <KomfiLogo className="h-6 text-[#2d2d2d]" />
           </div>
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl text-[#2d2d2d] mb-4 tracking-tight">
+          <h1 className="font-display text-4xl md:text-[48px] lg:text-[48px] text-[#2d2d2d] mb-4 tracking-tight">
             Odměny obchodních zástupců
           </h1>
           <p className="text-[#8a8279] text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
