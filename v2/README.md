@@ -2,13 +2,10 @@
 
 Interaktivní React kalkulačka pro simulaci výdělků obchodních zástupců Komfi.
 
-**Live:** [komfi-oz-calculator.netlify.app](https://komfi-oz-calculator.netlify.app) (vyžaduje heslo)
-
 ## Quick Start
 
 ```bash
 # 1. Nainstaluj závislosti
-cd v2
 npm install
 
 # 2. Spusť vývojový server
@@ -21,15 +18,12 @@ npm run dev
 ## Produkční build
 
 ```bash
-cd v2
+# Vytvoř produkční build
 npm run build
+
+# Náhled produkčního buildu
+npm run preview
 ```
-
-## Přístup
-
-Kalkulačka je chráněna heslem pro interní použití.
-
-- **Heslo:** `komfi-odmeny`
 
 ## Tech Stack
 
@@ -40,43 +34,43 @@ Kalkulačka je chráněna heslem pro interní použití.
 ## Struktura projektu
 
 ```
-komfi-oz-calculator/
-├── v1/                       # Původní verze (10-22% tiers, 2% portfolio)
-├── v2/                       # Aktuální verze (10-15% tiers, 5% portfolio)
-│   ├── public/
-│   │   └── favicon.ico       # Ikona aplikace
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── Calculator.jsx    # Hlavní komponenta kalkulačky
-│   │   ├── App.jsx               # Root komponenta
-│   │   ├── main.jsx              # Entry point
-│   │   └── index.css             # Tailwind directives + custom fonty
-│   ├── index.html
-│   ├── package.json
-│   └── ...
-└── README.md
+komfi-project/
+├── public/
+│   └── favicon.svg           # Ikona aplikace
+├── src/
+│   ├── components/
+│   │   └── Calculator.jsx    # Hlavní komponenta kalkulačky
+│   ├── App.jsx               # Root komponenta
+│   ├── main.jsx              # Entry point
+│   └── index.css             # Tailwind directives
+├── index.html                # HTML šablona
+├── package.json              # Závislosti a skripty
+├── vite.config.js            # Vite konfigurace
+├── tailwind.config.js        # Tailwind konfigurace
+├── postcss.config.js         # PostCSS konfigurace
+└── README.md                 # Tato dokumentace
 ```
 
 ---
 
-## Struktura odměňování (v2)
+## Struktura odměňování
 
 ### Fixní složka
-- **25 000 Kč/měsíc** – základní plat po dobu aktivní akvizice (M1–M6)
+- **25 000 Kč/měsíc** – základní plat
 
 ### Progresivní provize za 1. měsíc
 
 | Tier (noví klienti) | Provize |
 |---------------------|---------|
 | 0–20                | 10%     |
-| 21–50               | 11%     |
-| 51–100              | 12%     |
-| 101–200             | 13%     |
-| 201–400             | 14%     |
-| 400+                | 15%     |
+| 21–50               | 12%     |
+| 51–100              | 15%     |
+| 101–200             | 18%     |
+| 201–400             | 20%     |
+| 400+                | 22%     |
 
-### Provize za 2.–6. měsíc (portfolio)
-- **5%** z obratu klientů v portfoliu
+### Provize za 2.–6. měsíc
+- **2%** z obratu klientů v portfoliu (jednotně)
 
 ---
 
@@ -88,15 +82,15 @@ komfi-oz-calculator/
 const FIXED_SALARY = 25000;        // Fixní plat
 const AVG_ORDER = 2000;            // Průměrná měsíční útrata klienta
 const RETENTION = 0.5;             // Retence po 1. měsíci (50%)
-const PORTFOLIO_COMMISSION = 0.05; // Provize z portfolia (5%)
+const PORTFOLIO_COMMISSION = 0.02; // Provize z portfolia (2%)
 ```
 
 ### Výpočet měsíčního výdělku
 
 ```
-Měsíční výdělek = Fixní plat
+Měsíční výdělek = Fixní plat 
                 + (Noví klienti × Útrata × Tier%)
-                + (Portfolio × Útrata × 5%)
+                + (Portfolio × Útrata × 2%)
 ```
 
 ### Portfolio
@@ -110,6 +104,8 @@ Portfolio = součet klientů z předchozích měsíců (M-1 až M-5), kteří:
 ```
 CPA = Celkový výdělek M1–6 / Počet získaných klientů
 ```
+
+Zahrnuje fixní plat i všechny provize.
 
 ---
 
@@ -163,41 +159,86 @@ Agresivní růst přes velké partnery.
 
 | Typ | Obyvatel | Odhadovaný počet seniorů |
 |-----|----------|--------------------------|
-| Mini obec | ~1 000 | 20–50 |
-| Malá obec | ~3 000 | 50–100 |
-| Střední obec | 5 000–10 000 | 100–200 |
-| Velká obec | 10 000–30 000 | 200–400 |
-| Město | 30 000+ | 400+ |
+| 🏘️ Mini obec | ~1 000 | 20–50 |
+| 🏡 Malá obec | ~3 000 | 50–100 |
+| 🏢 Střední obec | 5 000–10 000 | 100–200 |
+| 🏙️ Velká obec | 10 000–30 000 | 200–400 |
+| 🌆 Město | 30 000+ | 400+ |
 
 ---
 
-## Verze
+## Customizace
 
-### v2 (aktuální)
-- Provizní tiers: 10–15%
-- Portfolio provize: 5%
-- Přihlašovací obrazovka s heslem
-- Komfi logo v hlavičce
+### Změna tierů
 
-### v1 (archiv)
-- Provizní tiers: 10–22%
-- Portfolio provize: 2%
+V souboru `src/components/Calculator.jsx`:
+
+```javascript
+const TIERS = [
+  { min: 0, max: 20, percent: 10, label: '0–20' },
+  { min: 21, max: 50, percent: 12, label: '21–50' },
+  // ...
+];
+```
+
+### Změna scénářů
+
+```javascript
+const SCENARIOS = {
+  conservative: {
+    name: 'Konzervativní',
+    clients: [40, 60, 80, 100, 125, 150],  // klienti per měsíc
+    partners: ['2× malá obec', ...],       // popis partnerů
+  },
+  // ...
+};
+```
+
+### Změna konstant
+
+```javascript
+const FIXED_SALARY = 25000;  // Základní plat
+const AVG_ORDER = 2000;      // Průměrná útrata
+const RETENTION = 0.5;       // Retence (0-1)
+```
+
+---
+
+## UI komponenty
+
+- **Sticky taby** – přepínání scénářů, zůstávají viditelné při scrollu
+- **Collapsible sekce** – typy partnerů (defaultně zavřená)
+- **Tooltips** – kontextové nápovědy (komponenta `InfoTooltip`)
+- **Tabulky s vysvětlivkami** – možnost skrýt/zobrazit
 
 ---
 
 ## Deployment
 
-Aplikace je nasazena na **Netlify** s automatickým deployem z `main` branch.
+### Vercel
 
-Build command: `cd v2 && npm run build`
-Publish directory: `v2/dist`
+```bash
+npm run build
+# Upload složky `dist/` na Vercel
+```
+
+### Netlify
+
+```bash
+npm run build
+# Upload složky `dist/` na Netlify
+```
+
+### Static hosting
+
+Po `npm run build` je aplikace ve složce `dist/` připravená k nasazení na jakýkoliv static hosting.
 
 ---
 
 ## Kontakt
 
-**Komfi Health s.r.o.**
-IČ 09208241
+**Komfi Health s.r.o.**  
+IČ 09208241  
 Korunní 2569/108, Praha 101 00
 
 - **Luboš Buračinský** – CEO – lubos@komfi.health
