@@ -383,12 +383,12 @@ function Calculator() {
             <h2 className="font-display text-2xl md:text-3xl text-[var(--color-text-primary)]">Jak funguje odměňování</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
             {[
               {
                 title: 'Fixní odměna',
                 value: '25 000 Kč',
-                description: 'Garantovaný měsíční příjem po dobu akivní akvizice nových partnerů.',
+                description: 'Garantovaný měsíční příjem po dobu aktivní akvizice nových partnerů.',
               },
               {
                 title: 'Provize z nových klientů',
@@ -399,6 +399,11 @@ function Calculator() {
                 title: 'Provize z portfolia',
                 value: '5 %',
                 description: 'Dlouhodobý příjem z aktivních klientů po dobu 2.–6. měsíce od jejich akvizice.',
+              },
+              {
+                title: 'Cestovné',
+                value: '10 Kč/km',
+                description: 'Příspěvek na dopravu při návštěvách partnerů a klientů v terénu.',
               },
             ].map((item, index) => (
               <div key={index} className="group">
